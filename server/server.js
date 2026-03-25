@@ -1,8 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const pool = require('.config/db.js'); // Import the pool from the file created in Step 1
-
+const pool = require('./config/db.js');
 const authRoutes = require('./routes/auth');
 
 const app = express();
