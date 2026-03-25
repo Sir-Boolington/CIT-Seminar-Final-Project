@@ -1,8 +1,9 @@
+console.log("Current files:", require('fs').readdirSync(__dirname));
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const authRoutes = require('./routes/auth');
-const pool = require('./db');
+const pool = require('./config/db');
 
 
 const app = express();
