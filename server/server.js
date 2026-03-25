@@ -1,8 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const pool = require('./config/db.js');
 const authRoutes = require('./routes/auth');
+const pool = require('./db');
+
 
 const app = express();
 const PORT = process.env.PORT || 10000; // Updated to match Render default
