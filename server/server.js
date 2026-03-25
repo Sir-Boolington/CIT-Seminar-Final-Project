@@ -1,44 +1,60 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const pool = require('./db'); // Import the pool from the file created in Step 1
 
 const authRoutes = require('./routes/auth');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000; // Updated to match Render default
 
-// ─── Middleware ──────────────────────────────────────────────
+// ——— Middleware ———
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true,
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true,
 }));
 app.use(express.json());
 
-// ─── Routes ─────────────────────────────────────────────────
+// ——— Routes ———
 app.use('/api/auth', authRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ─── Placeholder routes (to be built) ───────────────────────
+// Placeholder routes (uncomment as you build them in April) [cite: 79]
 // app.use('/api/chat', require('./routes/chat'));
 // app.use('/api/gauntlet', require('./routes/gauntlet'));
 // app.use('/api/admin', require('./routes/admin'));
 
-// ─── 404 handler ────────────────────────────────────────────
+// 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found.' });
+    res.status(404).json({ error: 'Route not found.' });
 });
 
-// ─── Error handler ──────────────────────────────────────────
+// Error handler
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error.' });
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
 });
 
-// ─── Start ──────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`✓ ThreatSim API running on http://localhost:${PORT}`);
-});
+// ——— Start Logic (The Heartbeat) ———
+async function startServer() {
+    try {
+        console.log('Connecting to PostgreSQL...');
+        // Test query to ensure DB is reachable
+        await pool.query('SELECT NOW()'); 
+        console.log('✓ Database connected successfully');
+
+        app.listen(PORT, () => {
+            console.log(`✓ ThreatSim API running on port ${PORT}`);
+        });
+    } catch (err) {
+        // If DB fails, the server will not start, and Render will show a "Failed" deploy
+        console.error('X PostgreSQL connection error:', err.message);
+        process.exit(1); 
+    }
+}
+
+startServer();
