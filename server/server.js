@@ -11,7 +11,11 @@ const PORT = process.env.PORT || 10000; // Updated to match Render default
 
 // ——— Middleware ———
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: [
+    'http://localhost:5173',
+    'https://threat-ag2drek61-sir-boolingtons-projects.vercel.app',
+    'https://threatsim.vercel.app' // add your final custom URL too if you rename it
+  ],
     credentials: true,
 }));
 app.use(express.json());
