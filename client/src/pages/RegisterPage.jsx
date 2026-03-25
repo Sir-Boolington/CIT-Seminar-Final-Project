@@ -1,0 +1,80 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { API_URL } from '../config';
+
+export default function RegisterPage() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', role: 'learner' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setError(''); };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    if (form.password !== form.confirmPassword) { setError('Passwords do not match.'); setLoading(false); return; }
+    if (form.password.length < 8) { setError('Password must be at least 8 characters.'); setLoading(false); return; }
+    try {
+      const res = await axios.post(`${API_URL}/api/auth/register`, {
+        username: form.username, email: form.email, password: form.password, role: form.role,
+      });
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Something went wrong. Please try again.');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-65px)] px-7 py-10">
+      <div className="w-full max-w-[340px] bg-ts-surface border border-ts-border rounded-xl p-7">
+        <h2 className="text-lg font-medium text-ts-text mb-1">Create your account</h2>
+        <p className="text-xs text-ts-text3 mb-5">Start your cybersecurity training today</p>
+        {error && (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-ts-red">{error}</div>
+        )}
+        <div className="flex gap-2 mb-4">
+          {['learner', 'admin'].map((r) => (
+            <button key={r} type="button" onClick={() => setForm({ ...form, role: r })}
+              className={`flex-1 py-2.5 rounded-lg text-center border transition-colors ${form.role === r ? 'border-ts-accent bg-indigo-500/[0.06]' : 'border-ts-border bg-ts-bg'}`}>
+              <span className={`text-[11px] font-medium ${form.role === r ? 'text-ts-accent2' : 'text-ts-text3'}`}>
+                {r.charAt(0).toUpperCase() + r.slice(1)}
+              </span>
+            </button>
+          ))}
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3.5">
+            <label className="block text-[11px] text-ts-text2 font-medium mb-1.5">Username</label>
+            <input type="text" name="username" value={form.username} onChange={handleChange} placeholder="agent_handle" required className="w-full px-3 py-2 bg-ts-bg border border-ts-border rounded-md text-xs text-ts-text placeholder:text-ts-text3 focus:outline-none focus:border-ts-accent transition-colors" />
+          </div>
+          <div className="mb-3.5">
+            <label className="block text-[11px] text-ts-text2 font-medium mb-1.5">Email</label>
+            <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="agent@threatsim.app" required className="w-full px-3 py-2 bg-ts-bg border border-ts-border rounded-md text-xs text-ts-text placeholder:text-ts-text3 focus:outline-none focus:border-ts-accent transition-colors" />
+          </div>
+          <div className="flex gap-2.5 mb-3.5">
+            <div className="flex-1">
+              <label className="block text-[11px] text-ts-text2 font-medium mb-1.5">Password</label>
+              <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="••••••••" required className="w-full px-3 py-2 bg-ts-bg border border-ts-border rounded-md text-xs text-ts-text placeholder:text-ts-text3 focus:outline-none focus:border-ts-accent transition-colors" />
+            </div>
+            <div className="flex-1">
+              <label className="block text-[11px] text-ts-text2 font-medium mb-1.5">Confirm</label>
+              <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="••••••••" required className="w-full px-3 py-2 bg-ts-bg border border-ts-border rounded-md text-xs text-ts-text placeholder:text-ts-text3 focus:outline-none focus:border-ts-accent transition-colors" />
+            </div>
+          </div>
+          <button type="submit" disabled={loading} className="w-full py-2.5 rounded-lg text-sm font-medium bg-ts-accent text-white hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1 mb-4">
+            {loading ? 'Creating account...' : 'Create account'}
+          </button>
+        </form>
+        <p className="text-center text-[11px] text-ts-text3">
+          Already have an account?{' '}
+          <Link to="/login" className="text-ts-accent2 hover:underline">Log in</Link>
+        </p>
+      </div>
+    </div>
+  );
+}
