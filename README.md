@@ -97,11 +97,11 @@ Open `http://localhost:5173` in your browser.
 
 ## Team — Zero Day Crew
 
-| Name            | Role                                          |
-| --------------- | --------------------------------------------- |
-| Anthony Rojas   | Project Manager / Full-Stack Developer         |
-| Milind Patel    | Frontend Developer (React UI)                 |
-| Jerome Vallido  | Backend Developer / Database Administrator     |
+| Name           | Role                                   |
+|---------------|----------------------------------------|
+| Anthony Rojas | Project Manager / Full-Stack Developer  |
+| Milind Patel  | Frontend (React UI) & Mode 1 AI Scoring |
+| Jerome Vallido| Backend / Database Administrator        |
 
 ## Course
 
