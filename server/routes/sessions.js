@@ -3,11 +3,10 @@ const router = express.Router();
 const pool = require('../config/db');
 
 // Middleware (reuse JWT auth if applicable)
-const authenticateToken = require('../middleware/auth'); // adjust path if needed
-
+const { authenticate } = require('../middleware/auth');
 // ------START SESSION-------
 
-router.post('/start', authenticateToken, async (req, res) => {
+router.post('/start', authenticate, async (req, res) => {
     const { mode_type, difficulty } = req.body;
     const user_id = req.user.user_id;
 

@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const authenticateToken = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 
 // ------SUBMIT ATTEMPT------
 
-router.post('/submit', authenticateToken, async (req, res) => {
-    const {
+router.post('/submit', authenticate, async (req, res) => {   
+ const {
         session_id,
         scenario_id,
         user_answer,
