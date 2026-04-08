@@ -1,5 +1,8 @@
 # ThreatSim
 
+LIVE URL FOR VERCEL LINK: https://cit-seminar-final-project.vercel.app/
+
+
 **Dual-Mode Cyber Threat Simulation & Awareness Training Platform**
 
 A full-stack cybersecurity awareness web application built around two distinct AI-powered training modes, tied to persistent user accounts with session history and a difficulty modifier system.
