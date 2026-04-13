@@ -32,9 +32,11 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+
+app.use('/api/gauntlet', require('./routes/gauntlet'));
+
 // Placeholder routes (uncomment as you build them in April) [cite: 79]
 // app.use('/api/chat', require('./routes/chat'));
-// app.use('/api/gauntlet', require('./routes/gauntlet'));
 // app.use('/api/admin', require('./routes/admin'));
 
 // 404 handler
