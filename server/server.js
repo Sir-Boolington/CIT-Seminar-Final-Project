@@ -16,7 +16,8 @@ app.use(cors({
     origin: [
     'http://localhost:5173',
     'https://threat-ag2drek61-sir-boolingtons-projects.vercel.app',
-    'https://threatsim.vercel.app' // add your final custom URL too if you rename it
+    'https://threatsim.vercel.app',
+    'https://cit-seminar-final-project.vercel.app'
   ],
     credentials: true,
 }));
