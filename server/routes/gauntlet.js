@@ -234,21 +234,36 @@ Evaluate the user's response and return ONLY a JSON object with no additional te
 
 Score generously for easy difficulty, moderately for medium, and strictly for hard. Award partial credit per the rubric criteria.`;
 
-        const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': process.env.CLAUDE_API_KEY,
-                'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-                model: 'claude-sonnet-4-20250514',
-                max_tokens: 1024,
-                messages: [
-                    { role: 'user', content: evaluationPrompt }
-                ]
-            })
-        });
+        // ——— Call the Claude API for evaluation (with retry) ———
+        let claudeResponse;
+        let retryAttempts = 0;
+        const maxRetries = 3;
+
+        while (retryAttempts < maxRetries) {
+            claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': process.env.CLAUDE_API_KEY,
+                    'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 1024,
+                    messages: [
+                        { role: 'user', content: evaluationPrompt }
+                    ]
+                })
+            });
+
+            if (claudeResponse.status === 529 && retryAttempts < maxRetries - 1) {
+                retryAttempts++;
+                console.log(`Claude API overloaded, retrying (${retryAttempts}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, 2000 * retryAttempts));
+                continue;
+            }
+            break;
+        }
 
         if (!claudeResponse.ok) {
             const errorBody = await claudeResponse.text();
@@ -435,5 +450,28 @@ router.post('/end', authenticate, async (req, res) => {
     }
 });
 
+// ————————————————————————————————————————————
+// 5. END SESSION VIA BEACON (no auth — tab close)
+// POST /api/gauntlet/end-beacon
+// Body: { session_id }
+// ————————————————————————————————————————————
+router.post('/end-beacon', async (req, res) => {
+    const { session_id } = req.body;
+
+    if (!session_id) {
+        return res.status(400).json({ error: 'session_id is required.' });
+    }
+
+    try {
+        await pool.query(
+            `UPDATE sessions SET ended_at = NOW() WHERE session_id = $1 AND ended_at IS NULL`,
+            [session_id]
+        );
+        res.json({ message: 'Session ended via beacon.' });
+    } catch (err) {
+        console.error('Beacon end session error:', err);
+        res.status(500).json({ error: 'Failed to end session.' });
+    }
+});
 
 module.exports = router;
