@@ -71,12 +71,10 @@ export default function DashboardPage() {
       )}
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 gap-3 mb-8">
         {[
           { label: 'Total sessions', value: loading ? '...' : (stats?.completed_sessions || 0), color: 'text-ts-accent2' },
           { label: 'Overall score', value: loading ? '...' : (stats?.avg_score ? `${stats.avg_score}%` : '—'), color: 'text-ts-green' },
-          { label: 'Current streak', value: loading ? '...' : (stats?.current_streak || 0), color: 'text-ts-amber' },
-          { label: 'Accuracy', value: loading ? '...' : (stats?.accuracy ? `${stats.accuracy}%` : '—'), color: 'text-ts-text' },
         ].map((stat) => (
           <div key={stat.label} className="bg-ts-surface border border-ts-border rounded-lg p-4">
             <p className="text-[11px] text-ts-text3 mb-1">{stat.label}</p>

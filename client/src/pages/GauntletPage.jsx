@@ -282,11 +282,34 @@ export default function GauntletPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Adaptive difficulty — tracks consecutive correct answers and unlocked difficulty levels
+  const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
+  const [unlockedDifficulties, setUnlockedDifficulties] = useState(() => {
+    const saved = sessionStorage.getItem('threatsim_unlocked_difficulties');
+    return saved ? JSON.parse(saved) : ['easy'];
+  });
+  const [difficultyUnlockBanner, setDifficultyUnlockBanner] = useState(null);
+
   // Ref to track sessionId for beforeunload (state is stale in event listeners)
   const sessionIdRef = useRef(null);
   useEffect(() => {
     sessionIdRef.current = sessionId;
   }, [sessionId]);
+
+  // ——— Auto-save draft answer to sessionStorage ———
+  useEffect(() => {
+    if (userAnswer) {
+      sessionStorage.setItem('threatsim_draft_answer', userAnswer);
+    } else {
+      sessionStorage.removeItem('threatsim_draft_answer');
+    }
+  }, [userAnswer]);
+
+  // Restore draft on mount (in case of accidental refresh)
+  useEffect(() => {
+    const draft = sessionStorage.getItem('threatsim_draft_answer');
+    if (draft) setUserAnswer(draft);
+  }, [currentIndex]);
 
   // ——— Timer logic ———
   useEffect(() => {
@@ -391,6 +414,29 @@ export default function GauntletPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setEvaluation(res.data);
+
+      // Adaptive difficulty — update streak and unlock higher difficulties
+      if (res.data.result === 'correct') {
+        const newStreak = consecutiveCorrect + 1;
+        setConsecutiveCorrect(newStreak);
+
+        // Unlock Intermediate after 3 consecutive correct answers on Beginner
+        if (difficulty === 'easy' && newStreak >= 3 && !unlockedDifficulties.includes('medium')) {
+          const updated = [...unlockedDifficulties, 'medium'];
+          setUnlockedDifficulties(updated);
+          sessionStorage.setItem('threatsim_unlocked_difficulties', JSON.stringify(updated));
+          setDifficultyUnlockBanner('intermediate');
+        }
+        // Unlock Expert after 3 consecutive correct answers on Intermediate
+        if (difficulty === 'medium' && newStreak >= 3 && !unlockedDifficulties.includes('hard')) {
+          const updated = [...unlockedDifficulties, 'hard'];
+          setUnlockedDifficulties(updated);
+          sessionStorage.setItem('threatsim_unlocked_difficulties', JSON.stringify(updated));
+          setDifficultyUnlockBanner('expert');
+        }
+      } else {
+        setConsecutiveCorrect(0);
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to submit answer.');
     } finally {
@@ -406,9 +452,11 @@ export default function GauntletPage() {
     }
     setCurrentIndex(prev => prev + 1);
     setUserAnswer('');
+    sessionStorage.removeItem('threatsim_draft_answer');
     setHintsUsed(0);
     setCurrentHints([]);
     setEvaluation(null);
+    setDifficultyUnlockBanner(null);
     setStartTime(Date.now());
     if (settings?.time_limit) {
       setTimeLeft(settings.time_limit);
@@ -450,6 +498,7 @@ export default function GauntletPage() {
     setCurrentIndex(0);
     setSettings(null);
     setUserAnswer('');
+    sessionStorage.removeItem('threatsim_draft_answer');
     setHintsUsed(0);
     setCurrentHints([]);
     setSubmitting(false);
@@ -460,6 +509,8 @@ export default function GauntletPage() {
     setDebrief(null);
     setLoading(false);
     setError('');
+    setConsecutiveCorrect(0);
+    setDifficultyUnlockBanner(null);
   };
 
   // ——— Render scenario by type ———
@@ -492,23 +543,33 @@ export default function GauntletPage() {
           {error && (
             <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-ts-red">{error}</div>
           )}
-          <div className="flex gap-3 justify-center mb-6">
+          <div className="flex gap-3 justify-center mb-3">
             {[
-              { level: 'easy', name: 'Beginner', desc: 'No time limit, 3 hints', color: 'border-green-500/30 hover:border-green-500/60 text-ts-green' },
-              { level: 'medium', name: 'Intermediate', desc: '90s per card, 1 hint', color: 'border-amber-500/30 hover:border-amber-500/60 text-ts-amber' },
-              { level: 'hard', name: 'Expert', desc: '45s per card, no hints', color: 'border-red-500/30 hover:border-red-500/60 text-ts-red' },
-            ].map((d) => (
-              <button
-                key={d.level}
-                onClick={() => startSession(d.level)}
-                disabled={loading}
-                className={`flex-1 max-w-[140px] bg-ts-surface border rounded-lg p-4 transition-colors ${d.color} disabled:opacity-50`}
-              >
-                <p className="text-sm font-medium mb-1">{d.name}</p>
-                <p className="text-[10px] text-ts-text3">{d.desc}</p>
-              </button>
-            ))}
+              { level: 'easy', name: 'Beginner', desc: 'No time limit, 3 hints', color: 'border-green-500/30 hover:border-green-500/60 text-ts-green', unlockHint: null },
+              { level: 'medium', name: 'Intermediate', desc: '90s per card, 1 hint', color: 'border-amber-500/30 hover:border-amber-500/60 text-ts-amber', unlockHint: '3 correct streak on Beginner' },
+              { level: 'hard', name: 'Expert', desc: '45s per card, no hints', color: 'border-red-500/30 hover:border-red-500/60 text-ts-red', unlockHint: '3 correct streak on Intermediate' },
+            ].map((d) => {
+              const isUnlocked = unlockedDifficulties.includes(d.level);
+              return (
+                <button
+                  key={d.level}
+                  onClick={() => isUnlocked && startSession(d.level)}
+                  disabled={loading || !isUnlocked}
+                  title={!isUnlocked ? `Locked — ${d.unlockHint}` : undefined}
+                  className={`flex-1 max-w-[140px] bg-ts-surface border rounded-lg p-4 transition-colors ${isUnlocked ? d.color : 'border-ts-border text-ts-text3 opacity-50 cursor-not-allowed'} disabled:cursor-not-allowed`}
+                >
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    {!isUnlocked && <span className="text-[10px]">🔒</span>}
+                    <p className="text-sm font-medium">{d.name}</p>
+                  </div>
+                  <p className="text-[10px] text-ts-text3">{isUnlocked ? d.desc : d.unlockHint}</p>
+                </button>
+              );
+            })}
           </div>
+          <p className="text-[10px] text-ts-text3 text-center mb-4">
+            Score 3 correct in a row to unlock the next difficulty
+          </p>
           <div className="flex justify-center gap-2 flex-wrap">
             {['Email', 'SMS', 'Webpage', 'Baiting', 'Text'].map((type) => (
               <span key={type} className="text-[10px] px-2.5 py-1 rounded-full bg-ts-surface border border-ts-border text-ts-text3">{type}</span>
@@ -622,6 +683,16 @@ export default function GauntletPage() {
                       </div>
                     )}
 
+                    {/* Best-practice answer in debrief */}
+                    {attempt.feedback.best_answer && (
+                      <div className="mb-3">
+                        <p className="text-[10px] text-ts-accent2 font-medium mb-1">✦ Best-practice answer:</p>
+                        <p className="text-[10px] text-ts-text2 leading-relaxed bg-indigo-500/5 border border-indigo-500/15 rounded-lg px-3 py-2">
+                          {attempt.feedback.best_answer}
+                        </p>
+                      </div>
+                    )}
+
                     {/* Meta info */}
                     <div className="flex gap-3 mt-2 pt-2 border-t border-ts-border">
                       {attempt.hints_used > 0 && (
@@ -714,11 +785,11 @@ export default function GauntletPage() {
 
         {/* Prompt */}
         <p className="text-xs text-ts-text3 mt-4 italic">
-          {scenario.type === 'email' && 'You received this email. What would you do and why?'}
-          {scenario.type === 'sms' && 'You received these text messages. What would you do and why?'}
-          {scenario.type === 'webpage' && 'You were directed to this webpage. What would you do and why?'}
-          {scenario.type === 'baiting' && 'You encounter this situation. What would you do and why?'}
-          {scenario.type === 'text' && 'You find yourself in this situation. What would you do and why?'}
+          {scenario.type === 'email' && 'You received this email. What would you do, and what red flags did you notice?'}
+          {scenario.type === 'sms' && 'You received these text messages. What would you do, and what red flags did you notice?'}
+          {scenario.type === 'webpage' && 'You were directed to this webpage. What would you do, and what red flags did you notice?'}
+          {scenario.type === 'baiting' && 'You encounter this situation. What would you do, and what red flags did you notice?'}
+          {scenario.type === 'text' && 'You find yourself in this situation. What would you do, and what red flags did you notice?'}
         </p>
       </div>
 
@@ -737,15 +808,46 @@ export default function GauntletPage() {
       {/* Answer / Evaluation area */}
       {!evaluation ? (
         <>
+          {/* Difficulty unlock banner */}
+          {difficultyUnlockBanner && (
+            <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/25 rounded-lg">
+              <span className="text-base">🔓</span>
+              <div>
+                <p className="text-[11px] font-medium text-ts-amber">
+                  {difficultyUnlockBanner === 'intermediate' ? 'Intermediate unlocked!' : 'Expert unlocked!'}
+                </p>
+                <p className="text-[10px] text-ts-text3">
+                  3 correct in a row — you've earned access to{' '}
+                  {difficultyUnlockBanner === 'intermediate' ? 'Intermediate' : 'Expert'} difficulty.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Text input */}
-          <textarea
-            value={userAnswer}
-            onChange={(e) => setUserAnswer(e.target.value)}
-            placeholder="Explain what you would do and why..."
-            disabled={submitting || timeLeft === 0}
-            rows={4}
-            className="w-full px-4 py-3 bg-ts-surface border border-ts-border rounded-lg text-xs text-ts-text placeholder:text-ts-text3 focus:outline-none focus:border-ts-accent transition-colors resize-none disabled:opacity-50 mb-4"
-          />
+          <div className="mb-4">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <label className="text-[11px] text-ts-text2 font-medium">Your response</label>
+              <div className="relative group">
+                <div className="w-3.5 h-3.5 rounded-full border border-ts-border flex items-center justify-center text-[9px] text-ts-text3 cursor-default">?</div>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-ts-surface border border-ts-border rounded-lg p-3 text-[10px] text-ts-text3 leading-relaxed opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-20 shadow-lg">
+                  <p className="text-ts-text2 font-medium mb-1.5">What your response is evalated for:</p>
+                  <p className="mb-1">① The safest action to take in this situation</p>
+                  <p className="mb-1">② Specific red flags you spotted (e.g. spoofed domain, urgency, unusual request)</p>
+                  <p>③ A brief reason why those details are suspicious</p>
+                  <p className="mt-2 text-ts-text3/70 italic">Vague answers like "it looks phishy" won't score well — be specific.</p>
+                </div>
+              </div>
+            </div>
+            <textarea
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value)}
+              placeholder="Describe the safest action you'd take and identify any red flags. "
+              disabled={submitting || timeLeft === 0}
+              rows={4}
+              className="w-full px-4 py-3 bg-ts-surface border border-ts-border rounded-lg text-xs text-ts-text placeholder:text-ts-text3 focus:outline-none focus:border-ts-accent transition-colors resize-none disabled:opacity-50"
+            />
+          </div>
 
           {/* Action buttons */}
           <div className="flex items-center justify-between">
@@ -860,6 +962,16 @@ export default function GauntletPage() {
                     </p>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Best-practice answer */}
+            {evaluation.best_answer && (
+              <div className="mt-4 pt-4 border-t border-ts-border">
+                <p className="text-[10px] text-ts-accent2 font-medium mb-1.5">✦ Best-practice answer:</p>
+                <p className="text-[11px] text-ts-text2 leading-relaxed bg-indigo-500/5 border border-indigo-500/15 rounded-lg px-3 py-2.5">
+                  {evaluation.best_answer}
+                </p>
               </div>
             )}
           </div>
