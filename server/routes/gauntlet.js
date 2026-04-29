@@ -9,8 +9,8 @@ console.log('API Key starts with:', process.env.CLAUDE_API_KEY?.substring(0, 15)
 // ————————————————————————————————————————————
 const DIFFICULTY_CONFIG = {
     easy: { hints_allowed: 3, time_limit: null, score_multiplier: 1.0 },
-    medium: { hints_allowed: 1, time_limit: 90, score_multiplier: 1.5 },
-    hard: { hints_allowed: 0, time_limit: 45, score_multiplier: 2.5 }
+    medium: { hints_allowed: 1, time_limit: 140, score_multiplier: 1.5 },
+    hard: { hints_allowed: 0, time_limit: 90, score_multiplier: 2.5 }
 };
 
 
