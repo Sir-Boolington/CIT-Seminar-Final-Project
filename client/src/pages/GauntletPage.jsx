@@ -282,13 +282,12 @@ export default function GauntletPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Adaptive difficulty — tracks consecutive correct answers and unlocked difficulty levels
+  // Adaptive difficulty — tracks consecutive correct answers to suggest next difficulty
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
-  const [unlockedDifficulties, setUnlockedDifficulties] = useState(() => {
-    const saved = sessionStorage.getItem('threatsim_unlocked_difficulties');
-    return saved ? JSON.parse(saved) : ['easy'];
+  const [difficultyStreakSuggestion, setDifficultyStreakSuggestion] = useState(() => {
+    const saved = sessionStorage.getItem('threatsim_streak_suggestion');
+    return saved ? JSON.parse(saved) : null;
   });
-  const [difficultyUnlockBanner, setDifficultyUnlockBanner] = useState(null);
 
   // Ref to track sessionId for beforeunload (state is stale in event listeners)
   const sessionIdRef = useRef(null);
@@ -415,24 +414,19 @@ export default function GauntletPage() {
       );
       setEvaluation(res.data);
 
-      // Adaptive difficulty — update streak and unlock higher difficulties
+      // Adaptive difficulty — track streak and set suggestion for next difficulty
       if (res.data.result === 'correct') {
         const newStreak = consecutiveCorrect + 1;
         setConsecutiveCorrect(newStreak);
 
-        // Unlock Intermediate after 3 consecutive correct answers on Beginner
-        if (difficulty === 'easy' && newStreak >= 3 && !unlockedDifficulties.includes('medium')) {
-          const updated = [...unlockedDifficulties, 'medium'];
-          setUnlockedDifficulties(updated);
-          sessionStorage.setItem('threatsim_unlocked_difficulties', JSON.stringify(updated));
-          setDifficultyUnlockBanner('intermediate');
-        }
-        // Unlock Expert after 3 consecutive correct answers on Intermediate
-        if (difficulty === 'medium' && newStreak >= 3 && !unlockedDifficulties.includes('hard')) {
-          const updated = [...unlockedDifficulties, 'hard'];
-          setUnlockedDifficulties(updated);
-          sessionStorage.setItem('threatsim_unlocked_difficulties', JSON.stringify(updated));
-          setDifficultyUnlockBanner('expert');
+        if (newStreak >= 3) {
+          let suggestion = null;
+          if (difficulty === 'easy') suggestion = { from: 'easy', to: 'medium' };
+          if (difficulty === 'medium') suggestion = { from: 'medium', to: 'hard' };
+          if (suggestion) {
+            setDifficultyStreakSuggestion(suggestion);
+            sessionStorage.setItem('threatsim_streak_suggestion', JSON.stringify(suggestion));
+          }
         }
       } else {
         setConsecutiveCorrect(0);
@@ -510,7 +504,8 @@ export default function GauntletPage() {
     setLoading(false);
     setError('');
     setConsecutiveCorrect(0);
-    setDifficultyUnlockBanner(null);
+    setDifficultyStreakSuggestion(null);
+    sessionStorage.removeItem('threatsim_streak_suggestion');
   };
 
   // ——— Render scenario by type ———
@@ -543,33 +538,44 @@ export default function GauntletPage() {
           {error && (
             <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-ts-red">{error}</div>
           )}
-          <div className="flex gap-3 justify-center mb-3">
+          {/* Streak suggestion banner */}
+          {difficultyStreakSuggestion && (
+            <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/25 rounded-lg max-w-sm mx-auto w-full">
+              <span className="text-base">🔥</span>
+              <div className="text-left">
+                <p className="text-[11px] font-medium text-ts-amber">
+                  You're on a streak — nice work!
+                </p>
+                <p className="text-[10px] text-ts-text3">
+                  3 correct in a row on {difficultyStreakSuggestion.from === 'easy' ? 'Beginner' : 'Intermediate'}. Ready to try{' '}
+                  <button
+                    onClick={() => startSession(difficultyStreakSuggestion.to)}
+                    className="text-ts-amber underline underline-offset-2 hover:text-amber-300 transition-colors"
+                  >
+                    {difficultyStreakSuggestion.to === 'medium' ? 'Intermediate' : 'Expert'}?
+                  </button>
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-center mb-6">
             {[
-              { level: 'easy', name: 'Beginner', desc: 'No time limit, 3 hints', color: 'border-green-500/30 hover:border-green-500/60 text-ts-green', unlockHint: null },
-              { level: 'medium', name: 'Intermediate', desc: '90s per card, 1 hint', color: 'border-amber-500/30 hover:border-amber-500/60 text-ts-amber', unlockHint: '3 correct streak on Beginner' },
-              { level: 'hard', name: 'Expert', desc: '45s per card, no hints', color: 'border-red-500/30 hover:border-red-500/60 text-ts-red', unlockHint: '3 correct streak on Intermediate' },
-            ].map((d) => {
-              const isUnlocked = unlockedDifficulties.includes(d.level);
-              return (
-                <button
-                  key={d.level}
-                  onClick={() => isUnlocked && startSession(d.level)}
-                  disabled={loading || !isUnlocked}
-                  title={!isUnlocked ? `Locked — ${d.unlockHint}` : undefined}
-                  className={`flex-1 max-w-[140px] bg-ts-surface border rounded-lg p-4 transition-colors ${isUnlocked ? d.color : 'border-ts-border text-ts-text3 opacity-50 cursor-not-allowed'} disabled:cursor-not-allowed`}
-                >
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    {!isUnlocked && <span className="text-[10px]">🔒</span>}
-                    <p className="text-sm font-medium">{d.name}</p>
-                  </div>
-                  <p className="text-[10px] text-ts-text3">{isUnlocked ? d.desc : d.unlockHint}</p>
-                </button>
-              );
-            })}
+              { level: 'easy', name: 'Beginner', desc: 'No time limit, 3 hints', color: 'border-green-500/30 hover:border-green-500/60 text-ts-green' },
+              { level: 'medium', name: 'Intermediate', desc: '140s per card, 1 hint', color: 'border-amber-500/30 hover:border-amber-500/60 text-ts-amber' },
+              { level: 'hard', name: 'Expert', desc: '90s per card, no hints', color: 'border-red-500/30 hover:border-red-500/60 text-ts-red' },
+            ].map((d) => (
+              <button
+                key={d.level}
+                onClick={() => startSession(d.level)}
+                disabled={loading}
+                className={`flex-1 max-w-[140px] bg-ts-surface border rounded-lg p-4 transition-colors ${d.color} disabled:opacity-50`}
+              >
+                <p className="text-sm font-medium mb-1">{d.name}</p>
+                <p className="text-[10px] text-ts-text3">{d.desc}</p>
+              </button>
+            ))}
           </div>
-          <p className="text-[10px] text-ts-text3 text-center mb-4">
-            Score 3 correct in a row to unlock the next difficulty
-          </p>
           <div className="flex justify-center gap-2 flex-wrap">
             {['Email', 'SMS', 'Webpage', 'Baiting', 'Text'].map((type) => (
               <span key={type} className="text-[10px] px-2.5 py-1 rounded-full bg-ts-surface border border-ts-border text-ts-text3">{type}</span>
@@ -808,22 +814,6 @@ export default function GauntletPage() {
       {/* Answer / Evaluation area */}
       {!evaluation ? (
         <>
-          {/* Difficulty unlock banner */}
-          {difficultyUnlockBanner && (
-            <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/25 rounded-lg">
-              <span className="text-base">🔓</span>
-              <div>
-                <p className="text-[11px] font-medium text-ts-amber">
-                  {difficultyUnlockBanner === 'intermediate' ? 'Intermediate unlocked!' : 'Expert unlocked!'}
-                </p>
-                <p className="text-[10px] text-ts-text3">
-                  3 correct in a row — you've earned access to{' '}
-                  {difficultyUnlockBanner === 'intermediate' ? 'Intermediate' : 'Expert'} difficulty.
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Text input */}
           <div className="mb-4">
             <div className="flex items-center gap-1.5 mb-1.5">
@@ -831,7 +821,7 @@ export default function GauntletPage() {
               <div className="relative group">
                 <div className="w-3.5 h-3.5 rounded-full border border-ts-border flex items-center justify-center text-[9px] text-ts-text3 cursor-default">?</div>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-ts-surface border border-ts-border rounded-lg p-3 text-[10px] text-ts-text3 leading-relaxed opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-20 shadow-lg">
-                  <p className="text-ts-text2 font-medium mb-1.5">What your response is evalated for:</p>
+                  <p className="text-ts-text2 font-medium mb-1.5">What the AI is looking for:</p>
                   <p className="mb-1">① The safest action to take in this situation</p>
                   <p className="mb-1">② Specific red flags you spotted (e.g. spoofed domain, urgency, unusual request)</p>
                   <p>③ A brief reason why those details are suspicious</p>
@@ -842,7 +832,7 @@ export default function GauntletPage() {
             <textarea
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
-              placeholder="Describe the safest action you'd take and identify any red flags. "
+              placeholder="Describe the safest action you'd take and identify any red flags — e.g. 'I would not click the link because the sender domain is misspelled and the request is unusually urgent.'"
               disabled={submitting || timeLeft === 0}
               rows={4}
               className="w-full px-4 py-3 bg-ts-surface border border-ts-border rounded-lg text-xs text-ts-text placeholder:text-ts-text3 focus:outline-none focus:border-ts-accent transition-colors resize-none disabled:opacity-50"
