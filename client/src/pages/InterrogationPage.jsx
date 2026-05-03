@@ -1,4 +1,6 @@
 import { useState } from "react";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 const interrogationScenarios = [
   {
     title: "Suspicious IT Support Chat",
@@ -192,7 +194,7 @@ const handleNextScenario = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/interrogation/chat", {
+      const res = await fetch(`${API_BASE_URL}/api/interrogation/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
