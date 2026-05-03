@@ -6,7 +6,7 @@ const authRoutes = require('./routes/auth');
 const pool = require('./config/db');
 const sessionRoutes = require('./routes/sessions');
 const attemptRoutes = require('./routes/attempts');
-
+const interrogationRoutes = require("./routes/interrogation");
 
 const app = express();
 const PORT = process.env.PORT || 10000; // Updated to match Render default
@@ -27,6 +27,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/attempts', attemptRoutes);
+app.use('/api/interrogation', interrogationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
