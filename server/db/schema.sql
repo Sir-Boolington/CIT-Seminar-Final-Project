@@ -21,7 +21,6 @@ CREATE TABLE users (
     current_streak  INT          NOT NULL DEFAULT 0,
     longest_streak  INT          NOT NULL DEFAULT 0,
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
-    last_login_date DATE
 );
 
 CREATE INDEX idx_users_email ON users (email);
@@ -321,6 +320,9 @@ VALUES
      'This is a CEO fraud / business email compromise (BEC) attack. Red flags include: requesting secrecy, bypassing normal approval processes, urgency, and a wire transfer to an unknown vendor. Always verify large financial requests through a separate communication channel.',
      200);
 
+-- For Streak Implementation
+ALTER TABLE users
+ADD COLUMN last_login DATE;
 
 -- ============================================================
 -- DONE
