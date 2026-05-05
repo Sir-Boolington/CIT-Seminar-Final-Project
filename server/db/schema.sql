@@ -18,8 +18,8 @@ CREATE TABLE users (
     password_hash   VARCHAR(255) NOT NULL,
     role            VARCHAR(10)  NOT NULL DEFAULT 'learner'
                         CHECK (role IN ('learner', 'admin')),
-    current_streak  INT          NOT NULL DEFAULT 0,
-    longest_streak  INT          NOT NULL DEFAULT 0,
+    current_streak  INT          NOT NULL DEFAULT 1,
+    longest_streak  INT          NOT NULL DEFAULT 1,
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
 );
 
