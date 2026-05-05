@@ -24,6 +24,7 @@ export default function DashboardPage() {
       });
       setStats(res.data.stats);
       setSessions(res.data.sessions);
+      setUser(res.data.user);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load session history.');
     } finally {
