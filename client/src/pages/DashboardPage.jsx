@@ -19,7 +19,7 @@ export default function DashboardPage() {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get(`/api/sessions/history`, {
+      const res = await axios.get(`${API_URL}/api/sessions/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(res.data.stats);
@@ -34,7 +34,7 @@ export default function DashboardPage() {
   //for streak logic
   const fetchProfile = async () => {
   try {
-    const res = await axios.get(`${API_URL}/api/auth/profile`, {
+    const res = await axios.get(`/api/auth/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     });
 
