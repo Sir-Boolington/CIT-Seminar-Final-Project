@@ -20,7 +20,8 @@ CREATE TABLE users (
                         CHECK (role IN ('learner', 'admin')),
     current_streak  INT          NOT NULL DEFAULT 0,
     longest_streak  INT          NOT NULL DEFAULT 0,
-    created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
+    created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
+    last_login_date DATE
 );
 
 CREATE INDEX idx_users_email ON users (email);
