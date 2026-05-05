@@ -19,7 +19,7 @@ export default function DashboardPage() {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/sessions/history`, {
+      const res = await axios.get(`/api/sessions/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(res.data.stats);
