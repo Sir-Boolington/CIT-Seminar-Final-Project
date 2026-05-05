@@ -14,6 +14,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchHistory();
+    fetchProfile();
   }, []);
 
   const fetchHistory = async () => {
@@ -29,6 +30,20 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+
+  //for streak logic
+  const fetchProfile = async () => {
+  try {
+    const res = await axios.get(`${API_URL}/api/auth/profile`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    setUser(res.data.user);
+
+  } catch (err) {
+    console.error('Failed to fetch profile');
+  }
+};
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -75,6 +90,8 @@ export default function DashboardPage() {
         {[
           { label: 'Total sessions', value: loading ? '...' : (stats?.completed_sessions || 0), color: 'text-ts-accent2' },
           { label: 'Overall score', value: loading ? '...' : (stats?.avg_score ? `${stats.avg_score}%` : '—'), color: 'text-ts-green' },
+      {label: 'Daily streak', value: loading ? '...' : `${user?.current_streak || 1} day(s)`, color: 'text-ts-amber' },
+      {label: 'Badges', value: loading ? '...' : 'Coming soon...', color: 'text-ts-purple' }
         ].map((stat) => (
           <div key={stat.label} className="bg-ts-surface border border-ts-border rounded-lg p-4">
             <p className="text-[11px] text-ts-text3 mb-1">{stat.label}</p>
