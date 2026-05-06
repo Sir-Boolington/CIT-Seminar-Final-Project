@@ -474,6 +474,8 @@ await pool.query(
      WHERE user_id = $2 AND NOT ($1 = ANY(badges))`,
     [session.difficulty, req.user.user_id]
 );
+        console.log('Badge awarded for difficulty:', session.difficulty, 'to user:', req.user.user_id);
+        
         res.json({ message: 'Session ended via beacon.' });
     } catch (err) {
         console.error('Beacon end session error:', err);
