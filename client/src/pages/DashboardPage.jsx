@@ -37,7 +37,7 @@ export default function DashboardPage() {
     const res = await axios.get(`${API_URL}/api/auth/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-
+    console.log('profile data:', res.data.user);
     setProfile(res.data.user);
 
   } catch (err) {
