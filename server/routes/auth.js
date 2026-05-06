@@ -89,44 +89,6 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Streak Logic
-	const today = new Date();
-	const todayStr = today.toISOString().split('T')[0];
-
-	let newStreak = 1;
-	newStreak === user.current_streak;
-
-	if (user.last_login) {
-	const lastLogin = new Date(user.last_login);
-
-	const diffDays = Math.floor(
-    (today - lastLogin) / (1000 * 60 * 60 * 24)
-);
-
-  if (diffDays === 0) {
-    // already logged in today, no change
-    newStreak = user.current_streak;
-  } else if (diffDays === 1) {
-    // consecutive day, increase streak
-    newStreak = user.current_streak += 1;
-  } else {
-    // missed a day, reset
-    newStreak = 1;
-  }
-}
-
-const newLongest = Math.max(newStreak, user.longest_streak);
-
-// update database
-await pool.query(
-  `UPDATE users
-   SET current_streak = $1,
-       longest_streak = $2,
-       last_login = $3
-   WHERE user_id = $4`,
-  [newStreak, newLongest, todayStr, user.user_id]
-);
-
     const token = jwt.sign(
       { user_id: user.user_id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
