@@ -24,7 +24,6 @@ export default function DashboardPage() {
       });
       setStats(res.data.stats);
       setSessions(res.data.sessions);
-      setUser(res.data.user);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load session history.');
     } finally {
@@ -35,7 +34,7 @@ export default function DashboardPage() {
   //for streak logic
   const fetchProfile = async () => {
   try {
-    const res = await axios.get(`/api/auth/profile`, {
+    const res = await axios.get(`${API_URL}/api/auth/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     });
 
