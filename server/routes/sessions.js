@@ -19,6 +19,43 @@ router.post('/start', authenticate, async (req, res) => {
             [user_id, mode_type, difficulty]
         );
 
+        // ------END SESSION-------
+router.post('/end', authenticate, async (req, res) => {
+    const { session_id } = req.body;
+    const user_id = req.user.user_id;
+
+    try {
+        // Get session to check difficulty
+        const sessionResult = await pool.query(
+            `UPDATE sessions 
+             SET ended_at = NOW()
+             WHERE session_id = $1 AND user_id = $2
+             RETURNING difficulty`,
+            [session_id, user_id]
+        );
+
+        if (sessionResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Session not found.' });
+        }
+
+        const { difficulty } = sessionResult.rows[0];
+
+        // Award badge if not already earned
+        await pool.query(
+            `UPDATE users
+             SET badges = array_append(badges, $1)
+             WHERE user_id = $2 AND NOT ($1 = ANY(badges))`,
+            [difficulty, user_id]
+        );
+
+        res.json({ message: 'Session ended', difficulty });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to end session' });
+    }
+});
+
         //streak start
 
         const session_id = result.rows[0].session_id;
