@@ -4,7 +4,6 @@ import axios from 'axios';
 import { API_URL } from '../config';
 
 export default function DashboardPage() {
-  const user = profile || {};
   const token = localStorage.getItem('token');
 
   const [stats, setStats] = useState(null);
@@ -78,7 +77,7 @@ export default function DashboardPage() {
   return (
     <div className="relative z-10 px-7 py-7 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-xl font-medium text-ts-text mb-1">Welcome back, {user.username || 'Agent'}</h1>
+        <h1 className="text-xl font-medium text-ts-text mb-1">Welcome back, {profile?.username || 'Agent'}</h1>
         <p className="text-xs text-ts-text3">Your training overview and session history</p>
       </div>
 
@@ -91,7 +90,7 @@ export default function DashboardPage() {
         {[
           { label: 'Total sessions', value: loading ? '...' : (stats?.completed_sessions || 0), color: 'text-ts-accent2' },
           { label: 'Overall score', value: loading ? '...' : (stats?.avg_score ? `${stats.avg_score}%` : '—'), color: 'text-ts-green' },
-      {label: 'Daily streak', value: loading ? '...' : `${profile?.current_streak ?? 1} day(s)`, color: 'text-ts-amber' },
+      {label: 'Daily streak', value: loading ? '...' : `${profile?.current_streak ?? 0} day(s)`, color: 'text-ts-amber' },
       {label: 'Badges', value: loading ? '...' : 'Coming soon...', color: 'text-ts-purple' }
         ].map((stat) => (
           <div key={stat.label} className="bg-ts-surface border border-ts-border rounded-lg p-4">
