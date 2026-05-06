@@ -74,7 +74,7 @@ router.post('/login', async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT user_id, username, email, password_hash, role, current_streak, longest_streak, last_login FROM users WHERE email = $1',
+      'SELECT user_id, username, email, password_hash, role FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
 
@@ -94,7 +94,7 @@ router.post('/login', async (req, res) => {
 	const todayStr = today.toISOString().split('T')[0];
 
 	let newStreak = 1;
-	newStreak = user.current_streak || 1;
+	newStreak === user.current_streak;
 
 	if (user.last_login) {
 	const lastLogin = new Date(user.last_login);
@@ -108,14 +108,14 @@ router.post('/login', async (req, res) => {
     newStreak = user.current_streak;
   } else if (diffDays === 1) {
     // consecutive day, increase streak
-    newStreak = (user.current_streak || 0) + 1;;
+    newStreak = user.current_streak += 1;
   } else {
     // missed a day, reset
     newStreak = 1;
   }
 }
 
-const newLongest = Math.max(newStreak, user.longest_streak || 1);
+const newLongest = Math.max(newStreak, user.longest_streak);
 
 // update database
 await pool.query(
@@ -141,8 +141,6 @@ await pool.query(
         username: user.username,
         email: user.email,
         role: user.role,
-		current_streak: newStreak,
-  		longest_streak: newLongest
       },
     });
   } catch (err) {
