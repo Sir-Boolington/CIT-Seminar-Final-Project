@@ -74,6 +74,26 @@ export default function DashboardPage() {
     }
   };
 
+  const Badge = ({ type }) => {
+  const config = {
+    easy:   { label: 'Beginner',     color: '#22c55e', icon: '★' },
+    medium: { label: 'Intermediate', color: '#f59e0b', icon: '★★' },
+    hard:   { label: 'Expert',       color: '#ef4444', icon: '★★★' },
+  }[type];
+
+  if (!config) return null;
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg"
+        style={{ background: `${config.color}20`, border: `2px solid ${config.color}`, color: config.color }}>
+        {config.icon}
+      </div>
+      <span className="text-[9px] text-ts-text3">{config.label}</span>
+    </div>
+  );
+};
+
   return (
     <div className="relative z-10 px-7 py-7 max-w-4xl mx-auto">
       <div className="mb-6">
@@ -91,7 +111,16 @@ export default function DashboardPage() {
           { label: 'Total sessions', value: loading ? '...' : (stats?.completed_sessions || 0), color: 'text-ts-accent2' },
           { label: 'Overall score', value: loading ? '...' : (stats?.avg_score ? `${stats.avg_score}%` : '—'), color: 'text-ts-green' },
       {label: 'Daily streak', value: loading ? '...' : `${profile?.current_streak ?? 1} day(s)`, color: 'text-ts-amber' },
-      {label: 'Badges', value: loading ? '...' : 'Coming soon...', color: 'text-ts-purple' }
+      { label: 'Badges', value: loading ? '...' : (<div className="flex gap-2 mt-1">
+        {['easy','medium','hard'].map(type => (
+        <div key={type} style={{ opacity: profile?.badges?.includes(type) ? 1 : 0.2 }}>
+          <Badge type={type} />
+        </div>
+      ))}
+    </div>
+  ), 
+  color: '' 
+}
         ].map((stat) => (
           <div key={stat.label} className="bg-ts-surface border border-ts-border rounded-lg p-4">
             <p className="text-[11px] text-ts-text3 mb-1">{stat.label}</p>
