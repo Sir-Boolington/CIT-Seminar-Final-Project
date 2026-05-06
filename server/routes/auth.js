@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { authenticate } = require('../middleware/auth');
-const { calculateStreak } = require('../utils/streak');
 
 const router = express.Router();
 
@@ -75,7 +74,7 @@ router.post('/login', async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT user_id, username, email, password_hash, role, current_streak, last_login FROM users WHERE email = $1',
+      'SELECT user_id, username, email, password_hash, role FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
 
@@ -89,21 +88,6 @@ router.post('/login', async (req, res) => {
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
-
-    // Calculate new streak
-    const newStreak = calculateStreak(
-      user.last_login,
-      user.current_streak ?? 1
-    );
-
-    // Update DB
-    await pool.query(
-      `UPDATE users
-       SET current_streak = $1, last_login = CURRENT_DATE
-       WHERE user_id = $2`,
-      [newStreak, user.user_id]
-    );
-
     
     const token = jwt.sign(
       { user_id: user.user_id, username: user.username, role: user.role },
@@ -119,7 +103,7 @@ router.post('/login', async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        current_streak: newStreak
+
       },
     });
   } catch (err) {
