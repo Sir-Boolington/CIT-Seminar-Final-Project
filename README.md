@@ -61,6 +61,7 @@ threatsim/
 | chat_messages  | Mode 1 conversation messages with flagging |
 | badges         | Achievement definitions (stretch)          |
 | user_badges    | User-badge junction table (stretch)        |
+| current_streak | Streak Counter                             |
 
 ## Getting Started
 
