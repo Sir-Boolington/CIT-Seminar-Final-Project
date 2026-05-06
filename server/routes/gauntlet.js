@@ -467,6 +467,13 @@ router.post('/end-beacon', async (req, res) => {
             `UPDATE sessions SET ended_at = NOW() WHERE session_id = $1 AND ended_at IS NULL`,
             [session_id]
         );
+        // Award badge for completing this difficulty
+await pool.query(
+    `UPDATE users
+     SET badges = array_append(badges, $1)
+     WHERE user_id = $2 AND NOT ($1 = ANY(badges))`,
+    [session.difficulty, req.user.user_id]
+);
         res.json({ message: 'Session ended via beacon.' });
     } catch (err) {
         console.error('Beacon end session error:', err);
