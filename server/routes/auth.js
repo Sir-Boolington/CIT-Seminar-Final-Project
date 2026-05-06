@@ -126,7 +126,7 @@ router.post('/login', async (req, res) => {
 router.get('/profile', authenticate, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT user_id, username, email, role, current_streak, longest_streak, created_at
+      `SELECT user_id, username, email, role, current_streak, longest_streak, badges, created_at
        FROM users WHERE user_id = $1`,
       [req.user.user_id]
     );
