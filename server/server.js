@@ -28,14 +28,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/attempts', attemptRoutes);
 app.use('/api/interrogation', interrogationRoutes);
+app.use('/api/gauntlet', require('./routes/gauntlet'));
 
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-
-
-app.use('/api/gauntlet', require('./routes/gauntlet'));
 
 // Placeholder routes (uncomment as you build them in April) [cite: 79]
 // app.use('/api/chat', require('./routes/chat'));
