@@ -381,6 +381,17 @@ router.post('/end', authenticate, async (req, res) => {
             [session_id]
         );
 
+        // Award badge
+const badgeResult = await pool.query(
+    `UPDATE users
+     SET badges = array_append(badges, $1)
+     WHERE user_id = $2 AND NOT ($1 = ANY(badges))
+     RETURNING badges`,
+    [session.difficulty, req.user.user_id]
+);
+console.log('Badge update result:', badgeResult.rows);
+console.log('Difficulty being awarded:', session.difficulty);
+
         // Pull all attempts for this session with scenario details
         const attemptsResult = await pool.query(
             `SELECT 
@@ -467,14 +478,6 @@ router.post('/end-beacon', async (req, res) => {
             `UPDATE sessions SET ended_at = NOW() WHERE session_id = $1 AND ended_at IS NULL`,
             [session_id]
         );
-        // Award badge for completing this difficulty
-await pool.query(
-    `UPDATE users
-     SET badges = array_append(badges, $1)
-     WHERE user_id = $2 AND NOT ($1 = ANY(badges))`,
-    [session.difficulty, req.user.user_id]
-);
-        console.log('Badge awarded for difficulty:', session.difficulty, 'to user:', req.user.user_id);
         
         res.json({ message: 'Session ended via beacon.' });
     } catch (err) {
