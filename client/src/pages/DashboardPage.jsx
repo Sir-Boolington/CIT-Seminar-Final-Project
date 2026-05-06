@@ -90,7 +90,7 @@ export default function DashboardPage() {
         {[
           { label: 'Total sessions', value: loading ? '...' : (stats?.completed_sessions || 0), color: 'text-ts-accent2' },
           { label: 'Overall score', value: loading ? '...' : (stats?.avg_score ? `${stats.avg_score}%` : '—'), color: 'text-ts-green' },
-      {label: 'Daily streak', value: loading ? '...' : `${profile?.current_streak} day(s)`, color: 'text-ts-amber' },
+      {label: 'Daily streak', value: loading ? '...' : `${profile?.current_streak ?? 1} day(s)`, color: 'text-ts-amber' },
       {label: 'Badges', value: loading ? '...' : 'Coming soon...', color: 'text-ts-purple' }
         ].map((stat) => (
           <div key={stat.label} className="bg-ts-surface border border-ts-border rounded-lg p-4">
