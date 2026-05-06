@@ -4,7 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../config';
 
 export default function DashboardPage() {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = profile || {};
   const token = localStorage.getItem('token');
 
   const [stats, setStats] = useState(null);
