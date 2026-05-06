@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     fetchHistory();
@@ -38,7 +39,7 @@ export default function DashboardPage() {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    setUser(res.data.user);
+    setProfile(res.data.user);
 
   } catch (err) {
     console.error('Failed to fetch profile');
@@ -90,7 +91,7 @@ export default function DashboardPage() {
         {[
           { label: 'Total sessions', value: loading ? '...' : (stats?.completed_sessions || 0), color: 'text-ts-accent2' },
           { label: 'Overall score', value: loading ? '...' : (stats?.avg_score ? `${stats.avg_score}%` : '—'), color: 'text-ts-green' },
-      {label: 'Daily streak', value: loading ? '...' : `${user?.current_streak} day(s)`, color: 'text-ts-amber' },
+      {label: 'Daily streak', value: loading ? '...' : `${profile?.current_streak ?? 1} day(s)`, color: 'text-ts-amber' },
       {label: 'Badges', value: loading ? '...' : 'Coming soon...', color: 'text-ts-purple' }
         ].map((stat) => (
           <div key={stat.label} className="bg-ts-surface border border-ts-border rounded-lg p-4">
