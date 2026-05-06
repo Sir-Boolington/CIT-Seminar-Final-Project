@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { calculateStreak } = require('../utils/streak');
 
 // Middleware (reuse JWT auth if applicable)
 const { authenticate } = require('../middleware/auth');
@@ -18,6 +19,37 @@ router.post('/start', authenticate, async (req, res) => {
             [user_id, mode_type, difficulty]
         );
 
+        //streak start
+
+        const session_id = result.rows[0].session_id;
+
+        // update streak after session is recorded
+        try {
+            const userResult = await pool.query(
+                `SELECT current_streak, last_login FROM users WHERE user_id = $1`,
+                [user_id]
+            );
+
+            const user = userResult.rows[0];
+
+            const newStreak = calculateStreak(
+                user.last_login,
+                user.current_streak ?? 1
+            );
+
+            await pool.query(
+                `UPDATE users
+                 SET current_streak = $1, last_login = CURRENT_DATE
+                 WHERE user_id = $2`,
+                [newStreak, user_id]
+            );
+
+        } catch (streakErr) {
+            console.error('Streak update failed:', streakErr);
+        }
+        
+        //streak end
+        
         res.json({
             message: 'Session started',
             session_id: result.rows[0].session_id
